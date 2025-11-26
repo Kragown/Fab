@@ -1,26 +1,9 @@
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
-    @State private var decklists: [Decklist] = [
-        Decklist(
-            titre: "Assassin compétitif",
-            heros: "Arakni",
-            format: "Classic Constructed",
-            date: Date()
-        ),
-        Decklist(
-            titre: "Brute fun",
-            heros: "Kayo",
-            format: "Silver Age",
-            date: Date().addingTimeInterval(-86400)
-        ),
-        Decklist(
-            titre: "Guardian broken",
-            heros: "Starvo",
-            format: "Living Legend",
-            date: Date().addingTimeInterval(-172800)
-        )
-    ]
+    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var decklistService: DecklistService
     @State private var decklistToDelete: Decklist?
     @State private var showDeleteAlert: Bool = false
     @State private var showNewDecklistModal: Bool = false
@@ -29,8 +12,11 @@ struct ContentView: View {
         NavigationView {
             ZStack {
                 List {
-                    ForEach($decklists) { $decklist in
-                        NavigationLink(destination: DecklistDetailView(decklist: $decklist)) {
+                    ForEach(decklistService.decklists) { decklist in
+                        NavigationLink(destination: DecklistDetailView(
+                            decklist: binding(for: decklist),
+                            decklistService: decklistService
+                        )) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(decklist.titre)
                                     .font(.headline)
@@ -56,6 +42,14 @@ struct ContentView: View {
                     }
                 }
                 .navigationTitle("Decklist")
+                .onAppear {
+                    if let userId = authService.currentUser?.uid {
+                        decklistService.fetchDecklists(userId: userId)
+                    }
+                }
+                .onDisappear {
+                    decklistService.stopListening()
+                }
                 .alert("Supprimer la Decklist", isPresented: $showDeleteAlert) {
                     Button("Annuler", role: .cancel) {
                         decklistToDelete = nil
@@ -91,19 +85,38 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showNewDecklistModal) {
-                NewDecklistView(isPresented: $showNewDecklistModal, decklists: $decklists)
+                NewDecklistView(isPresented: $showNewDecklistModal, decklistService: decklistService)
             }
         }
     }
     
-    private func deleteDecklist() {
-        if let decklist = decklistToDelete {
-            decklists.removeAll { $0.id == decklist.id }
-            decklistToDelete = nil
+    private func binding(for decklist: Decklist) -> Binding<Decklist> {
+        guard let index = decklistService.decklists.firstIndex(where: { $0.id == decklist.id }) else {
+            fatalError("Decklist not found")
         }
+        return $decklistService.decklists[index]
+    }
+    
+    private func deleteDecklist() {
+        guard let decklist = decklistToDelete,
+              let userId = authService.currentUser?.uid else {
+            return
+        }
+        
+        Task {
+            do {
+                try await decklistService.deleteDecklist(decklist, userId: userId)
+                // Le listener devrait automatiquement mettre à jour la liste
+            } catch {
+                print("Erreur lors de la suppression: \(error)")
+            }
+        }
+        
+        decklistToDelete = nil
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AuthService())
 }

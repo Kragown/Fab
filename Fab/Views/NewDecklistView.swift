@@ -1,13 +1,17 @@
 import SwiftUI
+import FirebaseAuth
 
 struct NewDecklistView: View {
     @Binding var isPresented: Bool
-    @Binding var decklists: [Decklist]
+    @ObservedObject var decklistService: DecklistService
     
     @State private var titre: String = ""
     @State private var heros: String = ""
     @State private var format: String = ""
     @State private var date: Date = Date()
+    @State private var isLoading: Bool = false
+    @State private var errorMessage: String = ""
+    @State private var showError: Bool = false
     
     var body: some View {
         NavigationView {
@@ -28,25 +32,52 @@ struct NewDecklistView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Créer") {
-                        createDecklist()
+                    if isLoading {
+                        ProgressView()
+                    } else {
+                        Button("Créer") {
+                            Task {
+                                await createDecklist()
+                            }
+                        }
+                        .disabled(titre.isEmpty || heros.isEmpty || format.isEmpty)
                     }
-                    .disabled(titre.isEmpty || heros.isEmpty || format.isEmpty)
                 }
+            }
+            .alert("Erreur", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
             }
         }
     }
     
-    private func createDecklist() {
+    private func createDecklist() async {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            errorMessage = "Utilisateur non connecté"
+            showError = true
+            return
+        }
+        
+        isLoading = true
+        
         let newDecklist = Decklist(
             titre: titre,
             heros: heros,
             format: format,
             date: date
         )
-        decklists.append(newDecklist)
-        isPresented = false
-        resetForm()
+        
+        do {
+            try await decklistService.createDecklist(newDecklist, userId: userId)
+            isPresented = false
+            resetForm()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        
+        isLoading = false
     }
     
     private func resetForm() {
@@ -60,7 +91,7 @@ struct NewDecklistView: View {
 #Preview {
     NewDecklistView(
         isPresented: .constant(true),
-        decklists: .constant([])
+        decklistService: DecklistService()
     )
 }
 

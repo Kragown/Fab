@@ -1,12 +1,17 @@
 import SwiftUI
+import FirebaseAuth
 
 struct DecklistDetailView: View {
     @Binding var decklist: Decklist
+    @ObservedObject var decklistService: DecklistService
     @State private var isEditing: Bool = false
     @State private var editedTitre: String = ""
     @State private var editedHeros: String = ""
     @State private var editedFormat: String = ""
     @State private var editedDate: Date = Date()
+    @State private var isLoading: Bool = false
+    @State private var errorMessage: String = ""
+    @State private var showError: Bool = false
     
     var body: some View {
         ScrollView {
@@ -42,8 +47,14 @@ struct DecklistDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if isEditing {
-                    Button("Sauvegarder") {
-                        saveChanges()
+                    if isLoading {
+                        ProgressView()
+                    } else {
+                        Button("Sauvegarder") {
+                            Task {
+                                await saveChanges()
+                            }
+                        }
                     }
                 } else {
                     Button("Modifier") {
@@ -51,6 +62,11 @@ struct DecklistDetailView: View {
                     }
                 }
             }
+        }
+        .alert("Erreur", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
         }
     }
     
@@ -62,12 +78,31 @@ struct DecklistDetailView: View {
         isEditing = true
     }
     
-    private func saveChanges() {
+    private func saveChanges() async {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            errorMessage = "Utilisateur non connecté"
+            showError = true
+            return
+        }
+        
+        isLoading = true
+        
         decklist.titre = editedTitre
         decklist.heros = editedHeros
         decklist.format = editedFormat
         decklist.date = editedDate
-        isEditing = false
+        
+        do {
+            try await decklistService.updateDecklist(decklist, userId: userId)
+            isEditing = false
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+            // Restaurer les valeurs en cas d'erreur
+            startEditing()
+        }
+        
+        isLoading = false
     }
 }
 
@@ -147,7 +182,8 @@ struct EditableDateRow: View {
                 heros: "Arakni",
                 format: "Classic Constructed",
                 date: Date()
-            ))
+            )),
+            decklistService: DecklistService()
         )
     }
 }
