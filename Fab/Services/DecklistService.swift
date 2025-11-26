@@ -29,10 +29,13 @@ class DecklistService: ObservableObject {
                     let data = doc.data()
                     guard let titre = data["titre"] as? String,
                           let heros = data["heros"] as? String,
-                          let format = data["format"] as? String,
+                          let formatString = data["format"] as? String,
                           let timestamp = data["date"] as? Timestamp else {
                         return nil
                     }
+                    
+                    // Convertir le String en GameFormat, avec une valeur par défaut si invalide
+                    let format = GameFormat(rawValue: formatString) ?? .classicConstructed
                     
                     let idString = doc.documentID
                     let uuid = UUID(uuidString: idString) ?? UUID()
@@ -63,7 +66,7 @@ class DecklistService: ObservableObject {
         let decklistData: [String: Any] = [
             "titre": decklist.titre,
             "heros": decklist.heros,
-            "format": decklist.format,
+            "format": decklist.format.rawValue,
             "date": Timestamp(date: decklist.date),
             "userId": userId
         ]
@@ -81,7 +84,7 @@ class DecklistService: ObservableObject {
         try await db.collection("decklists").document(docId).updateData([
             "titre": decklist.titre,
             "heros": decklist.heros,
-            "format": decklist.format,
+            "format": decklist.format.rawValue,
             "date": Timestamp(date: decklist.date)
         ])
     }

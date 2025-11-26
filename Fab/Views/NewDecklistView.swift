@@ -7,7 +7,7 @@ struct NewDecklistView: View {
     
     @State private var titre: String = ""
     @State private var heros: String = ""
-    @State private var format: String = ""
+    @State private var format: GameFormat = .classicConstructed
     @State private var date: Date = Date()
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
@@ -19,7 +19,11 @@ struct NewDecklistView: View {
                 Section("Informations") {
                     TextField("Titre", text: $titre)
                     TextField("Héros", text: $heros)
-                    TextField("Format", text: $format)
+                    Picker("Format", selection: $format) {
+                        ForEach(GameFormat.allCases, id: \.self) { format in
+                            Text(format.displayName).tag(format)
+                        }
+                    }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
             }
@@ -40,7 +44,7 @@ struct NewDecklistView: View {
                                 await createDecklist()
                             }
                         }
-                        .disabled(titre.isEmpty || heros.isEmpty || format.isEmpty)
+                        .disabled(titre.isEmpty || heros.isEmpty)
                     }
                 }
             }
@@ -83,7 +87,7 @@ struct NewDecklistView: View {
     private func resetForm() {
         titre = ""
         heros = ""
-        format = ""
+        format = .classicConstructed
         date = Date()
     }
 }

@@ -25,7 +25,7 @@ struct ContentView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    Text(decklist.format)
+                                    Text(decklist.format.displayName)
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                 }

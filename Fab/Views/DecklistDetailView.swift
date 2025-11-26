@@ -7,7 +7,7 @@ struct DecklistDetailView: View {
     @State private var isEditing: Bool = false
     @State private var editedTitre: String = ""
     @State private var editedHeros: String = ""
-    @State private var editedFormat: String = ""
+    @State private var editedFormat: GameFormat = .classicConstructed
     @State private var editedDate: Date = Date()
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
@@ -31,11 +31,11 @@ struct DecklistDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     if isEditing {
                         EditableInfoRow(label: "Héros", value: $editedHeros)
-                        EditableInfoRow(label: "Format", value: $editedFormat)
+                        EditableFormatRow(label: "Format", format: $editedFormat)
                         EditableDateRow(label: "Date", date: $editedDate)
                     } else {
                         InfoRow(label: "Héros", value: decklist.heros)
-                        InfoRow(label: "Format", value: decklist.format)
+                        InfoRow(label: "Format", value: decklist.format.displayName)
                         InfoRow(label: "Date", value: decklist.date, style: .date)
                     }
                 }
@@ -158,6 +158,29 @@ struct EditableInfoRow: View {
     }
 }
 
+struct EditableFormatRow: View {
+    let label: String
+    @Binding var format: GameFormat
+    
+    var body: some View {
+        HStack(alignment: .center) {
+            Text(label + ":")
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .frame(width: 80, alignment: .leading)
+            Spacer()
+            Picker("", selection: $format) {
+                ForEach(GameFormat.allCases, id: \.self) { gameFormat in
+                    Text(gameFormat.displayName)
+                        .tag(gameFormat)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(width: 200, alignment: .trailing)
+        }
+    }
+}
+
 struct EditableDateRow: View {
     let label: String
     @Binding var date: Date
@@ -180,7 +203,7 @@ struct EditableDateRow: View {
             decklist: .constant(Decklist(
                 titre: "Assassin compétitif",
                 heros: "Arakni",
-                format: "Classic Constructed",
+                format: .classicConstructed,
                 date: Date()
             )),
             decklistService: DecklistService()
