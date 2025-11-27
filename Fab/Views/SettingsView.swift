@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject var themeService: ThemeService
     @State private var notificationsEnabled: Bool = true
-    @State private var darkModeEnabled: Bool = false
     
     var body: some View {
         NavigationView {
@@ -12,7 +12,7 @@ struct SettingsView: View {
                 }
                 
                 Section("Apparence") {
-                    Toggle("Mode sombre", isOn: $darkModeEnabled)
+                    Toggle("Mode sombre", isOn: $themeService.isDarkMode)
                 }
                 
                 Section("À propos") {
@@ -31,5 +31,6 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environmentObject(ThemeService())
 }
 

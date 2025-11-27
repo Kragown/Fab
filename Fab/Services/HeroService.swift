@@ -12,9 +12,7 @@ class HeroService: ObservableObject {
     
     func fetchHeros() {
         listener?.remove()
-        
-        print("🔄 Début du chargement des héros...")
-        
+                
         listener = db.collection("heros")
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {

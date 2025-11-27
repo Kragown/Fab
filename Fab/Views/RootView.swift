@@ -4,6 +4,7 @@ struct RootView: View {
     @StateObject private var authService = AuthService()
     @StateObject private var decklistService = DecklistService()
     @StateObject private var heroService = HeroService()
+    @StateObject private var themeService = ThemeService()
     
     var body: some View {
         Group {
@@ -16,6 +17,8 @@ struct RootView: View {
         .environmentObject(authService)
         .environmentObject(decklistService)
         .environmentObject(heroService)
+        .environmentObject(themeService)
+        .preferredColorScheme(themeService.isDarkMode ? .dark : .light)
         .onAppear {
             heroService.fetchHeros()
         }
