@@ -13,14 +13,14 @@ enum GameFormat: String, Codable, CaseIterable {
 struct Decklist: Identifiable, Codable {
     let id: UUID
     var titre: String
-    var heros: String
+    var heroId: String
     var format: GameFormat
     var date: Date
     
-    init(id: UUID = UUID(), titre: String, heros: String, format: GameFormat, date: Date = Date()) {
+    init(id: UUID = UUID(), titre: String, heroId: String, format: GameFormat, date: Date = Date()) {
         self.id = id
         self.titre = titre
-        self.heros = heros
+        self.heroId = heroId
         self.format = format
         self.date = date
     }

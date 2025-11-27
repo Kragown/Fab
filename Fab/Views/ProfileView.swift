@@ -3,7 +3,7 @@ import FirebaseAuth
 
 struct ProfileView: View {
     @EnvironmentObject var authService: AuthService
-    @State private var totalDecklists: Int = 0
+    @EnvironmentObject var decklistService: DecklistService
     
     private var userName: String {
         authService.userProfile?.userName ?? "Utilisateur"
@@ -45,7 +45,7 @@ struct ProfileView: View {
                         
                         HStack {
                             VStack(alignment: .leading) {
-                                Text("\(totalDecklists)")
+                                Text("\(decklistService.decklists.count)")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 Text("Decklists")
@@ -67,23 +67,6 @@ struct ProfileView: View {
                         Text("Paramètres")
                             .font(.headline)
                             .padding(.horizontal)
-                        
-                        Button(action: {
-                            // Action pour modifier le profil
-                        }) {
-                            HStack {
-                                Image(systemName: "pencil")
-                                Text("Modifier le profil")
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
                         
                         Button(action: {
                             do {
@@ -112,6 +95,11 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profil")
+            .onAppear {
+                if let userId = authService.currentUser?.uid {
+                    decklistService.fetchDecklists(userId: userId)
+                }
+            }
         }
     }
 }

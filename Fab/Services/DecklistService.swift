@@ -28,13 +28,12 @@ class DecklistService: ObservableObject {
                 let newDecklists = snapshot.documents.compactMap { doc -> Decklist? in
                     let data = doc.data()
                     guard let titre = data["titre"] as? String,
-                          let heros = data["heros"] as? String,
+                          let heroId = data["heroId"] as? String ?? data["heros"] as? String, // Support rétrocompatibilité
                           let formatString = data["format"] as? String,
                           let timestamp = data["date"] as? Timestamp else {
                         return nil
                     }
                     
-                    // Convertir le String en GameFormat, avec une valeur par défaut si invalide
                     let format = GameFormat(rawValue: formatString) ?? .classicConstructed
                     
                     let idString = doc.documentID
@@ -43,7 +42,7 @@ class DecklistService: ObservableObject {
                     return Decklist(
                         id: uuid,
                         titre: titre,
-                        heros: heros,
+                        heroId: heroId,
                         format: format,
                         date: timestamp.dateValue()
                     )
@@ -65,7 +64,7 @@ class DecklistService: ObservableObject {
         
         let decklistData: [String: Any] = [
             "titre": decklist.titre,
-            "heros": decklist.heros,
+            "heroId": decklist.heroId,
             "format": decklist.format.rawValue,
             "date": Timestamp(date: decklist.date),
             "userId": userId
@@ -83,7 +82,7 @@ class DecklistService: ObservableObject {
         let docId = decklist.id.uuidString
         try await db.collection("decklists").document(docId).updateData([
             "titre": decklist.titre,
-            "heros": decklist.heros,
+            "heroId": decklist.heroId,
             "format": decklist.format.rawValue,
             "date": Timestamp(date: decklist.date)
         ])

@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @StateObject private var authService = AuthService()
     @StateObject private var decklistService = DecklistService()
+    @StateObject private var heroService = HeroService()
     
     var body: some View {
         Group {
@@ -14,6 +15,15 @@ struct RootView: View {
         }
         .environmentObject(authService)
         .environmentObject(decklistService)
+        .environmentObject(heroService)
+        .onAppear {
+            heroService.fetchHeros()
+        }
+        .onChange(of: authService.currentUser) { oldValue, newValue in
+            if newValue != nil {
+                heroService.fetchHeros()
+            }
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import FirebaseAuth
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var decklistService: DecklistService
+    @EnvironmentObject var heroService: HeroService
     @State private var decklistToDelete: Decklist?
     @State private var showDeleteAlert: Bool = false
     @State private var showNewDecklistModal: Bool = false
@@ -17,21 +18,26 @@ struct ContentView: View {
                             decklist: binding(for: decklist),
                             decklistService: decklistService
                         )) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(decklist.titre)
-                                    .font(.headline)
-                                HStack {
-                                    Text(decklist.heros)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    Text(decklist.format.displayName)
-                                        .font(.subheadline)
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(decklist.titre)
+                                        .font(.headline)
+                                    HStack {
+                                        Text(decklist.format.displayName)
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                    }
+                                    Text(decklist.date, style: .date)
+                                        .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
-                                Text(decklist.date, style: .date)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                HeroImageView(heroId: decklist.heroId, heroService: heroService)
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .padding(.vertical, 4)
                         }
@@ -106,13 +112,66 @@ struct ContentView: View {
         Task {
             do {
                 try await decklistService.deleteDecklist(decklist, userId: userId)
-                // Le listener devrait automatiquement mettre à jour la liste
             } catch {
                 print("Erreur lors de la suppression: \(error)")
             }
         }
         
         decklistToDelete = nil
+    }
+    
+    private func heroName(for heroId: String) -> String {
+        heroService.heros.first(where: { $0.id == heroId })?.name ?? heroId
+    }
+}
+
+struct HeroImageView: View {
+    let heroId: String
+    @ObservedObject var heroService: HeroService
+    @State private var imageURL: String?
+    
+    var body: some View {
+        Group {
+            if let urlString = imageURL, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    case .failure:
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    @unknown default:
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    }
+                }
+            } else {
+                Image(systemName: "person.fill")
+                    .foregroundColor(.gray)
+            }
+        }
+        .task {
+            await loadImage()
+        }
+    }
+    
+    private func loadImage() async {
+        guard let hero = heroService.heros.first(where: { $0.id == heroId }) else {
+            return
+        }
+        
+        if let url = hero.imageURL {
+            imageURL = url
+        } else {
+            // Si l'URL n'est pas encore chargée, essayer de la récupérer
+            if let url = await heroService.getImageURL(for: hero) {
+                imageURL = url
+            }
+        }
     }
 }
 

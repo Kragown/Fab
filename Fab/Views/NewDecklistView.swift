@@ -4,9 +4,10 @@ import FirebaseAuth
 struct NewDecklistView: View {
     @Binding var isPresented: Bool
     @ObservedObject var decklistService: DecklistService
+    @EnvironmentObject var heroService: HeroService
     
     @State private var titre: String = ""
-    @State private var heros: String = ""
+    @State private var selectedHeroId: String = ""
     @State private var format: GameFormat = .classicConstructed
     @State private var date: Date = Date()
     @State private var isLoading: Bool = false
@@ -18,7 +19,19 @@ struct NewDecklistView: View {
             Form {
                 Section("Informations") {
                     TextField("Titre", text: $titre)
-                    TextField("Héros", text: $heros)
+                    Picker("Héros", selection: $selectedHeroId) {
+                        Text("Sélectionner un héros").tag("")
+                        ForEach(heroService.heros) { hero in
+                            Text(hero.name).tag(hero.id)
+                        }
+                    }
+                    .onAppear {
+                        if heroService.heros.isEmpty {
+                            heroService.fetchHeros()
+                        } else {
+                            print("\(heroService.heros.count) héros disponibles dans le picker")
+                        }
+                    }
                     Picker("Format", selection: $format) {
                         ForEach(GameFormat.allCases, id: \.self) { format in
                             Text(format.displayName).tag(format)
@@ -44,7 +57,7 @@ struct NewDecklistView: View {
                                 await createDecklist()
                             }
                         }
-                        .disabled(titre.isEmpty || heros.isEmpty)
+                        .disabled(titre.isEmpty || selectedHeroId.isEmpty)
                     }
                 }
             }
@@ -67,7 +80,7 @@ struct NewDecklistView: View {
         
         let newDecklist = Decklist(
             titre: titre,
-            heros: heros,
+            heroId: selectedHeroId,
             format: format,
             date: date
         )
@@ -86,7 +99,7 @@ struct NewDecklistView: View {
     
     private func resetForm() {
         titre = ""
-        heros = ""
+        selectedHeroId = ""
         format = .classicConstructed
         date = Date()
     }

@@ -4,9 +4,10 @@ import FirebaseAuth
 struct DecklistDetailView: View {
     @Binding var decklist: Decklist
     @ObservedObject var decklistService: DecklistService
+    @EnvironmentObject var heroService: HeroService
     @State private var isEditing: Bool = false
     @State private var editedTitre: String = ""
-    @State private var editedHeros: String = ""
+    @State private var editedHeroId: String = ""
     @State private var editedFormat: GameFormat = .classicConstructed
     @State private var editedDate: Date = Date()
     @State private var isLoading: Bool = false
@@ -28,13 +29,31 @@ struct DecklistDetailView: View {
                 
                 Divider()
                 
+                if !isEditing, let hero = heroService.heros.first(where: { $0.id == decklist.heroId }) {
+                    HStack {
+                        HeroImageView(heroId: decklist.heroId, heroService: heroService)
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading) {
+                            Text(hero.name)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                            Text(hero.class)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+                
                 VStack(alignment: .leading, spacing: 12) {
                     if isEditing {
-                        EditableInfoRow(label: "Héros", value: $editedHeros)
+                        EditableHeroRow(label: "Héros", selectedHeroId: $editedHeroId, heroService: heroService)
                         EditableFormatRow(label: "Format", format: $editedFormat)
                         EditableDateRow(label: "Date", date: $editedDate)
                     } else {
-                        InfoRow(label: "Héros", value: decklist.heros)
+                        InfoRow(label: "Héros", value: heroName(for: decklist.heroId))
                         InfoRow(label: "Format", value: decklist.format.displayName)
                         InfoRow(label: "Date", value: decklist.date, style: .date)
                     }
@@ -72,7 +91,7 @@ struct DecklistDetailView: View {
     
     private func startEditing() {
         editedTitre = decklist.titre
-        editedHeros = decklist.heros
+        editedHeroId = decklist.heroId
         editedFormat = decklist.format
         editedDate = decklist.date
         isEditing = true
@@ -88,7 +107,7 @@ struct DecklistDetailView: View {
         isLoading = true
         
         decklist.titre = editedTitre
-        decklist.heros = editedHeros
+        decklist.heroId = editedHeroId
         decklist.format = editedFormat
         decklist.date = editedDate
         
@@ -98,11 +117,14 @@ struct DecklistDetailView: View {
         } catch {
             errorMessage = error.localizedDescription
             showError = true
-            // Restaurer les valeurs en cas d'erreur
             startEditing()
         }
         
         isLoading = false
+    }
+    
+    private func heroName(for heroId: String) -> String {
+        heroService.heros.first(where: { $0.id == heroId })?.name ?? heroId
     }
 }
 
@@ -158,6 +180,29 @@ struct EditableInfoRow: View {
     }
 }
 
+struct EditableHeroRow: View {
+    let label: String
+    @Binding var selectedHeroId: String
+    @ObservedObject var heroService: HeroService
+    
+    var body: some View {
+        HStack {
+            Text(label + ":")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            Spacer()
+            Picker("", selection: $selectedHeroId) {
+                Text("Sélectionner un héros").tag("")
+                ForEach(heroService.heros) { hero in
+                    Text(hero.name).tag(hero.id)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(width: 200, alignment: .trailing)
+        }
+    }
+}
+
 struct EditableFormatRow: View {
     let label: String
     @Binding var format: GameFormat
@@ -202,11 +247,12 @@ struct EditableDateRow: View {
         DecklistDetailView(
             decklist: .constant(Decklist(
                 titre: "Assassin compétitif",
-                heros: "Arakni",
+                heroId: "fILGcOvNAUHOPK3eYRVj",
                 format: .classicConstructed,
                 date: Date()
             )),
             decklistService: DecklistService()
         )
+        .environmentObject(HeroService())
     }
 }
