@@ -8,12 +8,29 @@ struct ContentView: View {
     @State private var decklistToDelete: Decklist?
     @State private var showDeleteAlert: Bool = false
     @State private var showNewDecklistModal: Bool = false
+    @State private var selectedFormat: GameFormat? = nil
+    @State private var selectedHeroId: String? = nil
+    
+    // Liste filtrée des decklists
+    private var filteredDecklists: [Decklist] {
+        var filtered = decklistService.decklists
+        
+        if let format = selectedFormat {
+            filtered = filtered.filter { $0.format == format }
+        }
+        
+        if let heroId = selectedHeroId {
+            filtered = filtered.filter { $0.heroId == heroId }
+        }
+        
+        return filtered
+    }
     
     var body: some View {
         NavigationView {
             ZStack {
                 List {
-                    ForEach(decklistService.decklists) { decklist in
+                    ForEach(filteredDecklists) { decklist in
                         NavigationLink(destination: DecklistDetailView(
                             decklist: binding(for: decklist),
                             decklistService: decklistService
@@ -48,6 +65,85 @@ struct ContentView: View {
                     }
                 }
                 .navigationTitle("Decklist")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Menu {
+                            Button(action: {
+                                selectedFormat = nil
+                            }) {
+                                HStack {
+                                    Text("Tous les formats")
+                                    if selectedFormat == nil {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            ForEach(GameFormat.allCases, id: \.self) { format in
+                                Button(action: {
+                                    selectedFormat = format
+                                }) {
+                                    HStack {
+                                        Text(format.displayName)
+                                        if selectedFormat == format {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "line.3.horizontal.decrease.circle")
+                                if selectedFormat != nil {
+                                    Text(selectedFormat?.displayName ?? "")
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Button(action: {
+                                selectedHeroId = nil
+                            }) {
+                                HStack {
+                                    Text("Tous les héros")
+                                    if selectedHeroId == nil {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            ForEach(heroService.heros) { hero in
+                                Button(action: {
+                                    selectedHeroId = hero.id
+                                }) {
+                                    HStack {
+                                        Text(hero.name)
+                                        if selectedHeroId == hero.id {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "person.3.fill")
+                                if let heroId = selectedHeroId,
+                                   let hero = heroService.heros.first(where: { $0.id == heroId }) {
+                                    Text(hero.name)
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                    }
+                }
                 .onAppear {
                     if let userId = authService.currentUser?.uid {
                         decklistService.fetchDecklists(userId: userId)
