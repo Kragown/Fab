@@ -58,18 +58,28 @@ struct ContentView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .leading).combined(with: .opacity),
+                            removal: .move(edge: .trailing).combined(with: .opacity)
+                        ))
                         .onLongPressGesture {
-                            decklistToDelete = decklist
-                            showDeleteAlert = true
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                decklistToDelete = decklist
+                                showDeleteAlert = true
+                            }
                         }
                     }
                 }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedFormat)
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedHeroId)
                 .navigationTitle("Decklist")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Menu {
                             Button(action: {
-                                selectedFormat = nil
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedFormat = nil
+                                }
                             }) {
                                 HStack {
                                     Text("Tous les formats")
@@ -83,7 +93,9 @@ struct ContentView: View {
                             
                             ForEach(GameFormat.allCases, id: \.self) { format in
                                 Button(action: {
-                                    selectedFormat = format
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        selectedFormat = format
+                                    }
                                 }) {
                                     HStack {
                                         Text(format.displayName)
@@ -107,7 +119,9 @@ struct ContentView: View {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
                             Button(action: {
-                                selectedHeroId = nil
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedHeroId = nil
+                                }
                             }) {
                                 HStack {
                                     Text("Tous les héros")
@@ -121,7 +135,9 @@ struct ContentView: View {
                             
                             ForEach(heroService.heros) { hero in
                                 Button(action: {
-                                    selectedHeroId = hero.id
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        selectedHeroId = hero.id
+                                    }
                                 }) {
                                     HStack {
                                         Text(hero.name)
@@ -170,7 +186,9 @@ struct ContentView: View {
                     HStack {
                         Spacer()
                         Button(action: {
-                            showNewDecklistModal = true
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                showNewDecklistModal = true
+                            }
                         }) {
                             Image(systemName: "plus")
                                 .font(.title2)

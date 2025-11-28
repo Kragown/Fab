@@ -21,13 +21,16 @@ struct DecklistDetailView: View {
                     TextField("Titre", text: $editedTitre)
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 } else {
                     Text(decklist.titre)
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
                 
                 Divider()
+                    .animation(.easeInOut(duration: 0.2), value: isEditing)
                 
                 if !isEditing, let hero = heroService.heros.first(where: { $0.id == decklist.heroId }) {
                     HStack {
@@ -45,22 +48,51 @@ struct DecklistDetailView: View {
                         Spacer()
                     }
                     .padding(.vertical, 8)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
                 }
                 
                 VStack(alignment: .leading, spacing: 12) {
                     if isEditing {
                         EditableHeroRow(label: "Héros", selectedHeroId: $editedHeroId, heroService: heroService)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                         EditableFormatRow(label: "Format", format: $editedFormat)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                         EditableDateRow(label: "Date", date: $editedDate)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                     } else {
                         InfoRow(label: "Héros", value: heroName(for: decklist.heroId))
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                         InfoRow(label: "Format", value: decklist.format.displayName)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                         InfoRow(label: "Date", value: decklist.date, style: .date)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                     }
                 }
             }
             .padding()
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isEditing)
         .navigationTitle("Détails")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -74,11 +106,15 @@ struct DecklistDetailView: View {
                                 await saveChanges()
                             }
                         }
+                        .transition(.opacity.combined(with: .scale))
                     }
                 } else {
                     Button("Modifier") {
-                        startEditing()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            startEditing()
+                        }
                     }
+                    .transition(.opacity.combined(with: .scale))
                 }
             }
         }
@@ -113,7 +149,9 @@ struct DecklistDetailView: View {
         
         do {
             try await decklistService.updateDecklist(decklist, userId: userId)
-            isEditing = false
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isEditing = false
+            }
         } catch {
             errorMessage = error.localizedDescription
             showError = true

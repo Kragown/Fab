@@ -19,12 +19,14 @@ struct NewDecklistView: View {
             Form {
                 Section("Informations") {
                     TextField("Titre", text: $titre)
+                        .animation(.easeInOut(duration: 0.2), value: titre)
                     Picker("Héros", selection: $selectedHeroId) {
                         Text("Sélectionner un héros").tag("")
                         ForEach(heroService.heros) { hero in
                             Text(hero.name).tag(hero.id)
                         }
                     }
+                    .animation(.easeInOut(duration: 0.2), value: selectedHeroId)
                     .onAppear {
                         if heroService.heros.isEmpty {
                             heroService.fetchHeros()
@@ -37,7 +39,9 @@ struct NewDecklistView: View {
                             Text(format.displayName).tag(format)
                         }
                     }
+                    .animation(.easeInOut(duration: 0.2), value: format)
                     DatePicker("Date", selection: $date, displayedComponents: .date)
+                        .animation(.easeInOut(duration: 0.2), value: date)
                 }
             }
             .navigationTitle("Nouvelle Decklist")
@@ -45,7 +49,9 @@ struct NewDecklistView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Annuler") {
-                        isPresented = false
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            isPresented = false
+                        }
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -58,6 +64,7 @@ struct NewDecklistView: View {
                             }
                         }
                         .disabled(titre.isEmpty || selectedHeroId.isEmpty)
+                        .animation(.easeInOut(duration: 0.2), value: titre.isEmpty || selectedHeroId.isEmpty)
                     }
                 }
             }

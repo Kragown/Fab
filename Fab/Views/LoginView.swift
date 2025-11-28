@@ -21,12 +21,14 @@ struct LoginView: View {
             Text(isLoginMode ? "Connexion" : "Créer un compte")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .animation(.easeInOut(duration: 0.3), value: isLoginMode)
             
             VStack(spacing: 16) {
                 if !isLoginMode {
                     TextField("Nom d'utilisateur", text: $userName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .autocapitalization(.none)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 
                 TextField("Email", text: $email)
@@ -49,6 +51,7 @@ struct LoginView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(maxWidth: .infinity)
                             .padding()
+                            .transition(.opacity.combined(with: .scale))
                     } else {
                         Text(isLoginMode ? "Se connecter" : "S'inscrire")
                             .frame(maxWidth: .infinity)
@@ -56,13 +59,18 @@ struct LoginView: View {
                             .background(Color.blue)
                             .foregroundColor(.white)
                             .cornerRadius(10)
+                            .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .disabled(isLoading || email.isEmpty || password.isEmpty || (!isLoginMode && userName.isEmpty))
+                .animation(.easeInOut(duration: 0.2), value: isLoading)
+                .animation(.easeInOut(duration: 0.2), value: isLoginMode)
                 
                 Button(action: {
-                    isLoginMode.toggle()
-                    errorMessage = ""
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isLoginMode.toggle()
+                        errorMessage = ""
+                    }
                 }) {
                     Text(isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter")
                         .foregroundColor(.blue)
@@ -70,6 +78,7 @@ struct LoginView: View {
                 }
             }
             .padding(.horizontal, 32)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isLoginMode)
             
             Spacer()
         }
