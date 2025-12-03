@@ -61,9 +61,9 @@ iOSInjectionProject/
 .DS_Store
 
 # Firebase
-# NOTE: GoogleService-Info.plist peut être publié (clés publiques côté client)
-# Si vous préférez ne pas le publier, décommentez la ligne suivante :
-# GoogleService-Info.plist
+# GoogleService-Info.plist contient des clés sensibles et ne doit pas être versionné
+# Utilisez GoogleService-Info.plist.template comme référence
+Fab/GoogleService-Info.plist
 
 # Secrets et clés API personnelles
 Secrets.plist
